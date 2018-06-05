@@ -3,11 +3,9 @@
 
 BASE_PATH="./vendor/" # Config the base path for all modules, and end it with '/'
 
+CONF_PATH="./mvg.ini"
 
 echo "======== start ========"
-
-inifile="./mvg.ini"
-section="$1"
 
 cwd=`pwd`
 echo "pwd: $cwd"
@@ -15,12 +13,12 @@ echo "----------------"
 
 list_ini_secs()
 {
-    if [ ! -f ${inifile} ]
+    if [ ! -f ${CONF_PATH} ]
     then
-        echo "file [${inifile}] not exist!"
+        echo "file [${CONF_PATH}] not found!"
         exit
     else
-        sections=`sed -n '/\[*\]/p' ${inifile} | grep -v '^#' | tr -d []`
+        sections=`sed -n '/\[*\]/p' ${CONF_PATH} | grep -v '^#' | tr -d []`
         for i in ${sections}
         do
           echo $i
@@ -41,24 +39,30 @@ handle_sec_kvs()
 {
     cur_sec="$1"
 
-    for kv in $(sed -n '/\['$cur_sec'\]/,/^$/p' $inifile | grep -Ev '\[|\]|^$' | awk -F '=' '{printf "%s=\"%s\"\n", $1, $2}')
+    for kv in $(sed -n '/\['$cur_sec'\]/,/^$/p' $CONF_PATH | grep -Ev '\[|\]|^$' | awk -F '=' '{printf "%s=\"%s\"\n", $1, $2}')
     do
         eval $kv
     done
 
+    if [[ -z "$repo" ]]
+    then
+        echo "section [${cur_sec}] not defined!"
+        return 1
+    fi
+
     cur_path="${BASE_PATH}${cur_sec}"
-    echo "${repo}, ${cur_path} , ${checkout}"
+    echo "[${cur_sec}] ${repo}, ${cur_path} , ${checkout}"
 
     rm -rf ${cur_path}
 
-    echo "${cur_sec}: clone"
+    echo "[${cur_sec}] clone"
     git clone ${repo} ${cur_path}
     echo "................"
 
     if [[ ! -z "$checkout" ]]
     then
         cd ${cur_path}
-        echo "${cur_sec}: checkout"
+        echo "[${cur_sec}] checkout"
         git checkout ${checkout}
         echo "................"
         cd ${cwd}
@@ -67,21 +71,22 @@ handle_sec_kvs()
     rm -rf ${cur_path}/.git
 
     reset_vars
-    echo "${cur_sec}: done"
-    echo "----------------"
+    echo "[${cur_sec}] done"
 }
 
-for sec in `list_ini_secs`
-do
-    if [[ -z "$section" ]]
-    then
+if [ $# -eq 0 ]
+then # No argument
+    for sec in `list_ini_secs`
+    do
+        echo "----------------"
         handle_sec_kvs ${sec}
-    else
-        if [[ "$sec" = "$section" ]]
-        then
-            handle_sec_kvs ${sec}
-        fi
-    fi
-done
+    done
+else # Specified in arguments
+    for arg in "$@"
+    do
+        echo "----------------"
+        handle_sec_kvs ${arg}
+    done
+fi
 
 echo "======== done ========"
