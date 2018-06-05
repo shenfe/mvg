@@ -35,11 +35,11 @@
     repo=git@some.server.com:foo/mod_c.git
     checkout=v1.0.0
     ```
-1. 执行`mvg.sh`，即可将配置定义的包一次同步到项目内；可以加一个参数，即指定一个包名，则脚本只会检查和更新这个包
+1. 执行`mvg.sh`，即可将配置定义的包一次同步到项目内；可以加参数，即指定（1个或多个）包名，脚本便只检查和更新指定的包
 
     ```bash
     $ ./mvg.sh # sync all
-    $ ./mvg.sh mod_a # just sync `mod_a`
+    $ ./mvg.sh mod_a mod_b # just sync `mod_a` and `mod_b`
     ```
 
 ## 注意事项
