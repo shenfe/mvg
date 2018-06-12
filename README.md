@@ -48,6 +48,8 @@
 * 包的代码只从外部更新，而**不在项目开发过程中改动**，除非确定以后不再从外部更新这个包，或者愿意每次更新都合并改动
 * 因为包的代码是项目代码的一部分，所以包的代码不用被git ignore，在依赖没有变动的情况下也不需要有一般包管理器的install操作
 
+特别地，对于python模块，如果包含requirements.txt文件，建议在项目的requirements.txt中使用`-r vendor/mod_a/requirements.txt`的方式将模块的依赖引进项目的依赖。
+
 ## 相关工作
 
 其实主流的包管理器如npm、pip都支持vcs。例如pip[对vcs的支持](https://pip.pypa.io/en/stable/reference/pip_install/#vcs-support)，但还不是最方便灵活。
