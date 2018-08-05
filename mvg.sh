@@ -95,7 +95,7 @@ handle_sec_kvs()
         git_path="${cur_path}/${m_name}"
         git clone ${repo} ${git_path}
         echo "from ${m_name} import *" > ${cur_path}/__init__.py
-        echo "Please do not modify files here! Go to the right repository for source codes!" > ${cur_path}/WARNING.md
+        echo "Please do not modify files here!\nGo to the source place!" > ${cur_path}/WARNING
     else
         git_path=$cur_path
         git clone ${repo} ${git_path}
