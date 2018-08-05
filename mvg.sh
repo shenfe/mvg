@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 
-BASE_PATH="./" # Config the base path for all modules, and end it with '/'
+BASE_PATH="./vendor/" # Config the base path for all modules, and end it with '/'
 
 CONF_PATH="./mvg.ini"
 
@@ -40,9 +40,6 @@ md5sum_of_str()
 
     echo ${result:0:8}
 }
-
-repo=""
-checkout=""
 
 reset_vars()
 {
