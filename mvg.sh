@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 
-BASE_PATH="./vendor/" # Config the base path for all modules, and end it with '/'
+BASE_PATH="./" # Config the base path for all modules, and end it with '/'
 
 CONF_PATH="./mvg.ini"
 
@@ -26,6 +26,21 @@ list_ini_secs()
     fi
 }
 
+md5sum_of_str()
+{
+    target_str="$1"
+
+    if type "md5" > /dev/null; then
+        result=$(printf '%s' "${target_str}" | md5 | cut -d ' ' -f 1)
+    elif type "md5sum" > /dev/null; then
+        result=$(printf '%s' "${target_str}" | md5sum | cut -d ' ' -f 1)
+    else
+        result="$target_str"
+    fi
+
+    echo ${result:0:8}
+}
+
 repo=""
 checkout=""
 
@@ -33,6 +48,10 @@ reset_vars()
 {
     repo=""
     checkout=""
+    wrap=""
+    file=""
+    path=""
+    subpath=""
 }
 
 handle_sec_kvs()
@@ -44,31 +63,58 @@ handle_sec_kvs()
         eval $kv
     done
 
-    if [[ -z "$repo" ]]
+    # Get the local path, namely where to save
+    if [[ ! -z "$path" ]]
     then
-        echo "section [${cur_sec}] not defined!"
-        return 1
+        cur_path="${path}"
+    elif [[ ! -z "$subpath" ]]
+    then
+        cur_path="${BASE_PATH}${subpath}"
+    else
+        cur_path="${BASE_PATH}${cur_sec}"
     fi
 
-    cur_path="${BASE_PATH}${cur_sec}"
-    echo "[${cur_sec}] ${repo}, ${cur_path} , ${checkout}"
+    if [[ -z "$repo" ]]
+    then
+        if [[ -z "$file" ]]
+        then
+            echo "section [${cur_sec}]'s 'repo' or 'file' not defined!"
+            return 1
+        else
+            curl $file --output $cur_path --create-dirs
+        fi
+        return
+    fi
 
+    echo "[${cur_sec}] ${repo}, ${cur_path}, ${checkout}"
+
+    git_path=""
     rm -rf ${cur_path}
 
     echo "[${cur_sec}] clone"
-    git clone ${repo} ${cur_path}
+    if [ "$wrap" = "py" ]
+    then
+        m_name="m_$(md5sum_of_str ${cur_sec})"
+        git_path="${cur_path}/${m_name}"
+        git clone ${repo} ${git_path}
+        echo "from ${m_name} import *" > ${cur_path}/__init__.py
+        echo "Please do not modify files here! Go to the right repository for source codes!" > ${cur_path}/WARNING.md
+    else
+        git_path=$cur_path
+        git clone ${repo} ${git_path}
+    fi
     echo "................"
 
     if [[ ! -z "$checkout" ]]
     then
-        cd ${cur_path}
+        cd ${git_path}
         echo "[${cur_sec}] checkout"
         git checkout ${checkout}
         echo "................"
         cd ${cwd}
     fi
 
-    rm -rf ${cur_path}/.git
+    rm -rf ${git_path}/.git
 
     reset_vars
     echo "[${cur_sec}] done"
