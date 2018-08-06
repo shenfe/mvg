@@ -21,30 +21,30 @@
 2. 将`mvg.sh`脚本开头的`BASE_PATH`变量配置成自己想要的目录（默认为`./`），用于放置所有依赖包
 3. 在`mvg.ini`中定义依赖
     1. 每个section相当于**包名**，git会在`BASE_PATH`目录下将对应的仓库clone到以该名字命名的子目录
-    2. 为每个包定义`repo`（即git url；必填）、`checkout`（即branch或tag；选填）、`subpath`（在BASE_PATH下的子路径；选填）、`path`（在项目根路径下的子路径，不受BASE_PATH限制；选填）、`wrap`（包装形式，例如"py"则会将包放进名称带有包名hash的子文件夹中，再由与该子文件夹同级的__init__.py文件`import *`；选填）
+    2. 为每个包定义`repo`（即git url；必填）、`checkout`（即branch或tag；选填）、`subpath`（在BASE_PATH下的子路径；选填）、`path`（在项目根路径下的子路径，不受BASE_PATH限制；选填）、`wrap`（包装形式，例如`py`则会将包放进名称带有包名hash的子文件夹中，再在与该子文件夹同级的__init__.py文件中`import *`；选填）
 
     ```ini
     [a]
-    repo=git@some.server.com:foo/mod_a.git
+    repo=git@some.server.com:foo/a.git
 
     [b]
-    repo=git@some.server.com:foo/mod_b.git
+    repo=git@some.server.com:foo/b.git
     checkout=master
 
     [c]
-    repo=git@some.server.com:foo/mod_c.git
+    repo=git@some.server.com:foo/c.git
     checkout=v1.0.0
 
     [d]
-    repo=git@some.server.com:foo/mod_d.git
-    subpath=d_pro
+    repo=git@some.server.com:foo/d.git
+    subpath=mod_d/
 
     [e]
-    repo=git@some.server.com:foo/mod_e.git
-    path=util/e
+    repo=git@some.server.com:foo/e.git
+    path=util/mod_e/
 
     [f]
-    repo=git@some.server.com:foo/mod_f.git
+    repo=git@some.server.com:foo/f.git
     wrap=py
     ```
     
@@ -57,7 +57,7 @@
 
     [g]
     cmd_before=echo 'before'
-    cmd=cd .. && git clone git@some.server.com:foo/mod_g.git
+    cmd=cd .. && git clone git@some.server.com:foo/g.git
     cmd_after=echo 'after'
     ```
 
@@ -65,7 +65,7 @@
 
     ```bash
     $ ./mvg.sh # sync all
-    $ ./mvg.sh mod_a mod_b # just sync `mod_a` and `mod_b`
+    $ ./mvg.sh a b # just sync `a` and `b`
     ```
 
 ## 注意事项
