@@ -112,11 +112,19 @@ handle_sec_kvs()
 
         # Git clone
         echo "[${cur_sec}] git clone"
-        if [ "$wrap" = "py" ]
+        if [[ ! -z "$wrap" ]]
         then
             m_name="m_$(md5sum_of_str ${cur_sec})"
             git clone ${repo} ${git_path}/${m_name}
-            echo "from ${m_name} import *" > ${git_path}/__init__.py
+
+            if [ "$wrap" = "py" ]
+            then
+                echo "from ${m_name} import *" > ${git_path}/__init__.py
+            elif [ "$wrap" = "js" ]
+            then
+                echo "export * from ./${m_name}" > ${git_path}/index.js
+            fi
+
             git_path="${git_path}/${m_name}"
         else
             git clone ${repo} ${git_path}
