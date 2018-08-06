@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 
-BASE_PATH="./vendor/" # Config the base path for all modules, and end it with '/'
+BASE_PATH="./" # Config the base path for all modules, and end it with '/'
 
 CONF_PATH="./mvg.ini"
 
@@ -43,20 +43,25 @@ md5sum_of_str()
 
 reset_vars()
 {
-    repo=""
-    checkout=""
-    wrap=""
-    file=""
-    path=""
-    subpath=""
+    repo=""         # Git repo
+    checkout=""     # Git checkpoint
+    wrap=""         # If some wrapping is needed
+    file=""         # CURL file url
+    path=""         # Target path relative to `cwd`, ended with '/'
+    subpath=""      # Target path relative to `BASE_PATH`, ended with '/'
+    cmd=""          # Command to sync the module file, to be executed given the absence of `repo` and `file`
+    cmd_before=""   # Command before the sync
+    cmd_after=""    # Command after the sync
 }
 
 handle_sec_kvs()
 {
     cur_sec="$1"
 
-    for kv in $(sed -n '/\['$cur_sec'\]/,/^$/p' $CONF_PATH | grep -Ev '\[|\]|^$' | awk -F '=' '{printf "%s=\"%s\"\n", $1, $2}')
+    IFS=$'\n'
+    for kv in $(sed -n '/\['$cur_sec'\]/,/^$/p' $CONF_PATH | grep -Ev '\[|\]|^$' | awk -F"=" '{printf "%s=\"%s\"\n", $1, $2}')
     do
+        echo $kv
         eval $kv
     done
 
@@ -68,53 +73,85 @@ handle_sec_kvs()
     then
         cur_path="${BASE_PATH}${subpath}"
     else
-        cur_path="${BASE_PATH}${cur_sec}"
+        cur_path="${BASE_PATH}"
     fi
+    cur_path="${cur_path}${cur_sec}"
 
-    if [[ -z "$repo" ]]
-    then
-        if [[ -z "$file" ]]
-        then
-            echo "section [${cur_sec}]'s 'repo' or 'file' not defined!"
-            return 1
-        else
-            curl $file --output $cur_path --create-dirs
-        fi
-        return
-    fi
-
-    echo "[${cur_sec}] ${repo}, ${cur_path}, ${checkout}"
-
-    git_path=""
+    echo "[${cur_sec}] in ${cur_path}"
     rm -rf ${cur_path}
+    mkdir -p ${cur_path}
+    cd ${cur_path}
 
-    echo "[${cur_sec}] clone"
-    if [ "$wrap" = "py" ]
+    # Execute a command before the sync
+    if [[ ! -z "$cmd_before" ]]
     then
-        m_name="m_$(md5sum_of_str ${cur_sec})"
-        git_path="${cur_path}/${m_name}"
-        git clone ${repo} ${git_path}
-        echo "from ${m_name} import *" > ${cur_path}/__init__.py
-        echo "Please do not modify files here!\nGo to the source place!" > ${cur_path}/WARNING
-    else
-        git_path=$cur_path
-        git clone ${repo} ${git_path}
+        echo "[${cur_sec}] before sync: ${cmd_before}"
+        eval "$cmd_before"
     fi
-    echo "................"
 
-    if [[ ! -z "$checkout" ]]
+    cd ${cwd}
+    cd ${cur_path}
+
+    # Execute the sync command
+    if [[ ! -z "$cmd" ]]
     then
-        cd ${git_path}
-        echo "[${cur_sec}] checkout"
-        git checkout ${checkout}
-        echo "................"
+        echo "[${cur_sec}] sync cmd: ${cmd}"
+        eval "$cmd"
+
+    # CURL
+    elif [[ ! -z "$file" ]]
+    then
+        echo "[${cur_sec}] curl"
+        curl -O -J $file
+
+    # Git
+    elif [[ ! -z "$repo" ]]
+    then
         cd ${cwd}
+        git_path="${cur_path}"
+
+        # Git clone
+        echo "[${cur_sec}] git clone"
+        if [ "$wrap" = "py" ]
+        then
+            m_name="m_$(md5sum_of_str ${cur_sec})"
+            git clone ${repo} ${git_path}/${m_name}
+            echo "from ${m_name} import *" > ${git_path}/__init__.py
+            git_path="${git_path}/${m_name}"
+        else
+            git clone ${repo} ${git_path}
+        fi
+        echo "................"
+
+        # Git checkout
+        if [[ ! -z "$checkout" ]]
+        then
+            cd ${git_path}
+            echo "[${cur_sec}] git checkout"
+            git checkout ${checkout}
+            echo "................"
+            cd ${cwd}
+        fi
+
+        rm -rf ${git_path}/.git
+
+    else
+        echo "section [${cur_sec}]'s sync method not defined!"
     fi
 
-    rm -rf ${git_path}/.git
+    cd ${cur_path}
+    echo "Please do not modify files here!\nGo to the right repository for source codes!" > WARNING
 
-    reset_vars
+    # Execute a command after the sync
+    if [[ ! -z "$cmd_after" ]]
+    then
+        echo "[${cur_sec}] after sync: ${cmd_after}"
+        eval "$cmd_after"
+    fi
+
     echo "[${cur_sec}] done"
+    reset_vars
+    cd ${cwd}
 }
 
 if [ $# -eq 0 ]
