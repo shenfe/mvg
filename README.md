@@ -1,8 +1,8 @@
 # mvg (modules via git)
 
-> 方便起见，以下将项目开发时需要引入的外部代码、公共模块简称“包”。这类包通常是工具、辅助性质，而不是需要上线的服务。
+> 方便起见，以下将项目开发时需要引入的外部代码、公共模块简称“包”。这类包通常是工具、辅助性质，而不是需要上线的完整服务。
 
-极其简单的基于git的包管理器。不限语言和项目，只依赖shell和git。
+极其简单的基于git等shell工具的包管理器，不限语言和项目。
 
 ## 基本思想
 
@@ -20,8 +20,8 @@
 1. 将`mvg.sh`和`mvg.ini`拷贝至项目根目录下
 2. 将`mvg.sh`脚本开头的`BASE_PATH`变量配置成自己想要的目录（默认为`./`），用于放置所有依赖包
 3. 在`mvg.ini`中定义依赖
-    1. 每个section相当于**包名**，git会在`BASE_PATH`目录下将对应的仓库clone到以该名字命名的子目录
-    2. 为每个包定义`repo`（即git url；必填）、`checkout`（即branch或tag；选填）、`subpath`（在BASE_PATH下的子路径；选填）、`path`（在项目根路径下的子路径，不受BASE_PATH限制；选填）、`wrap`（包装形式，例如`py`则会将包放进名称带有包名hash的子文件夹中，再在与该子文件夹同级的__init__.py文件中`import *`；选填）
+    1. 每个section相当于**包名**。如果是git方式，则会在`BASE_PATH`目录下将对应的仓库clone到以该名字命名的子目录
+    2. 为每个包定义`repo`（即git url；如果是git方式则必填）、`checkout`（即git checkout命令的参数，为branch或tag；选填）、`subpath`（在`BASE_PATH`下的子路径，以`/`结尾；选填）、`path`（在项目根路径下的子路径，不受`BASE_PATH`限制，以`/`结尾；选填）、`wrap`（包装形式；例如`py`则会将包放进名称带有包名hash的子文件夹中，再在与该子文件夹同级的__init__.py文件中`import *`；选填）
 
     ```ini
     [a]
@@ -41,24 +41,42 @@
 
     [e]
     repo=git@some.server.com:foo/e.git
-    path=util/mod_e/
+    path=util/
 
     [f]
     repo=git@some.server.com:foo/f.git
     wrap=py
     ```
     
-    3. 除了git方式外，还可以：定义`file`，可以通过curl将指定url的文件下载到指定路径；定义`cmd`，自定义下载过程。此外，可以自定义下载内容前后的过程：定义`cmd_before`，在下载包内容前执行；定义`cmd_after`，在下载包内容后执行
+    3. 除了git方式外，还可以：
+
+        1. 定义`file`，可以通过curl将指定url的文件下载到指定路径
+        1. 定义`cmd`，自定义下载过程
+
+       此外，可以自定义下载内容前后的过程：
+
+        1. 定义`cmd_before`，在下载包内容前执行
+        1. 定义`cmd_after`，在下载包内容后执行
 
     ```ini
-    [config]
-    file=http://some.domain.com/path/to/config.py
-    path=./static/
-
     [g]
     cmd_before=echo 'before'
     cmd=cd .. && git clone git@some.server.com:foo/g.git
     cmd_after=echo 'after'
+
+    [h]
+    cmd=scp user@x.x.x.x:/path/to/mod.py ./
+
+    [i]
+    cmd=scp -r user@x.x.x.x:/path/to/mod ./
+    wrap=py
+
+    [j]
+    cmd=scp -r user@x.x.x.x:/path/to/mod ../
+
+    [k]
+    file=http://some.domain.com/path/to/k.json
+    path=./static/
     ```
 
 1. 执行`mvg.sh`，即可将配置定义的包一次同步到项目内；可以加参数，即指定（1个或多个）包名，脚本便只检查和更新指定的包
