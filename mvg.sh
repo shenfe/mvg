@@ -196,7 +196,8 @@ handle_sec_kvs()
     if [[ "$(count_files)" = "1" ]] # Check if there is only one file
     then
         only_file=$(get_first_file)
-        if [[ "$(check_file $only_file)" = "0" ]]; then # Ensure it is a file
+        only_file_type=$(check_file $only_file)
+        if [ "$only_file_type" = "0" ]; then # If it is a file
             ext=$(get_file_ext "$only_file") # Get the file extension
             if [[ ! -z "$wrap" ]]; then
                 ext=$wrap
@@ -205,6 +206,14 @@ handle_sec_kvs()
                 m_name=$(conv_name ${cur_sec})
                 mv $only_file ${m_name}.${ext} # Rename
                 gen_wrapping $m_name . $ext # Wrap
+            fi
+        elif [ "$only_file_type" = "-1" ]; then # If it is a folder
+            if [[ ! -z "$wrap" ]]; then
+                if [ "$wrap" = "py" ] || [ "$wrap" = "js" ]; then
+                    m_name=$(conv_name ${cur_sec})
+                    mv $only_file ${m_name} # Rename
+                    gen_wrapping $m_name . $wrap # Wrap
+                fi
             fi
         fi
     fi
