@@ -41,6 +41,55 @@ md5sum_of_str()
     echo ${result:0:8}
 }
 
+conv_name()
+{
+    echo m_$(md5sum_of_str $1)
+}
+
+count_files()
+{
+    echo $(find . ! -name . -prune -print | grep -c /)
+}
+
+get_first_file()
+{
+    echo $(ls | head -1)
+}
+
+check_file()
+{
+    f=$1
+    if [[ -d $f ]]; then
+        echo -1 # Directory
+    elif [[ -f $f ]]; then
+        echo 0 # File
+    else
+        echo 1 # Invalid
+    fi
+}
+
+get_file_ext()
+{
+    fullfile=$1
+    filename="${fullfile##*/}"
+    extension="${filename##*.}"
+    echo $extension
+}
+
+gen_wrapping()
+{
+    m=$1
+    p=$2
+    t=$3
+    if [ "$t" = "py" ]
+    then
+        echo "from ${m} import *" > ${p}/__init__.py
+    elif [ "$t" = "js" ]
+    then
+        echo "export * from './${m}'" > ${p}/index.js
+    fi
+}
+
 reset_vars()
 {
     repo=""         # Git repo
@@ -114,16 +163,10 @@ handle_sec_kvs()
         echo "[${cur_sec}] git clone"
         if [[ ! -z "$wrap" ]]
         then
-            m_name="m_$(md5sum_of_str ${cur_sec})"
+            m_name="$(conv_name ${cur_sec})"
             git clone ${repo} ${git_path}/${m_name}
 
-            if [ "$wrap" = "py" ]
-            then
-                echo "from ${m_name} import *" > ${git_path}/__init__.py
-            elif [ "$wrap" = "js" ]
-            then
-                echo "export * from ./${m_name}" > ${git_path}/index.js
-            fi
+            gen_wrapping $m_name "$git_path" $wrap # Wrap
 
             git_path="${git_path}/${m_name}"
         else
@@ -147,7 +190,25 @@ handle_sec_kvs()
         echo "section [${cur_sec}]'s sync method not defined!"
     fi
 
+    cd ${cwd}
     cd ${cur_path}
+
+    if [[ "$(count_files)" = "1" ]] # Check if there is only one file
+    then
+        only_file=$(get_first_file)
+        if [[ "$(check_file $only_file)" = "0" ]]; then # Ensure it is a file
+            ext=$(get_file_ext "$only_file") # Get the file extension
+            if [[ ! -z "$wrap" ]]; then
+                ext=$wrap
+            fi
+            if [ "$ext" = "py" ] || [ "$ext" = "js" ]; then
+                m_name=$(conv_name ${cur_sec})
+                mv $only_file ${m_name}.${ext} # Rename
+                gen_wrapping $m_name . $ext # Wrap
+            fi
+        fi
+    fi
+
     echo "Please do not modify files here!\nGo to the right repository for source codes!" > WARNING
 
     # Execute a command after the sync
