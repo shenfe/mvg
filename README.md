@@ -77,6 +77,9 @@
         [k]
         file=http://some.domain.com/path/to/k.json
         path=./static/
+
+        [l]
+        cmd=git archive --remote ssh://some.server.com:foo/proj HEAD path/to/l.py | tar xvz --strip-components 2
         ```
 
 1. 执行`mvg.sh`，即可将配置定义的包一次同步到项目内；可以加参数，即指定（1个或多个）包名，脚本便只检查和更新指定的包
