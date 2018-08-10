@@ -1,4 +1,4 @@
-# mvg (modules via git)
+# mvg (modules via git and more)
 
 > 方便起见，以下将项目开发时需要引入的外部代码、公共模块简称“包”。这类包通常是工具、辅助性质，而不是需要上线的完整服务。
 
