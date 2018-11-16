@@ -108,7 +108,7 @@ handle_sec_kvs()
     cur_sec="$1"
 
     IFS=$'\n'
-    for kv in $(sed -n '/\['$cur_sec'\]/,/^$/p' $CONF_PATH | grep -Ev '\[|\]|^$' | awk -F"=" '{printf "%s=\"%s\"\n", $1, $2}')
+    for kv in $(sed -n '/\['$cur_sec'\]/,/^\[/p' $CONF_PATH | grep -Ev '\[|\]|^$' | awk -F"=" '{printf "%s=\"%s\"\n", $1, $2}')
     do
         echo $kv
         eval $kv
