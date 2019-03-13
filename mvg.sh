@@ -101,6 +101,10 @@ reset_vars()
     cmd=""          # Command to sync the module file, to be executed given the absence of `repo` and `file`
     cmd_before=""   # Command before the sync
     cmd_after=""    # Command after the sync
+    cmd_after1=""   # Command after the sync
+    cmd_after2=""   # Command after the sync
+    cmd_after3=""   # Command after the sync
+    cmd_after4=""   # Command after the sync
 }
 
 handle_sec_kvs()
@@ -228,6 +232,26 @@ handle_sec_kvs()
     then
         echo "[${cur_sec}] after sync: ${cmd_after}"
         eval "$cmd_after"
+    fi
+    if [[ ! -z "$cmd_after1" ]]
+    then
+        echo "[${cur_sec}] after sync: ${cmd_after1}"
+        eval "$cmd_after1"
+    fi
+    if [[ ! -z "$cmd_after2" ]]
+    then
+        echo "[${cur_sec}] after sync: ${cmd_after2}"
+        eval "$cmd_after2"
+    fi
+    if [[ ! -z "$cmd_after3" ]]
+    then
+        echo "[${cur_sec}] after sync: ${cmd_after3}"
+        eval "$cmd_after3"
+    fi
+    if [[ ! -z "$cmd_after4" ]]
+    then
+        echo "[${cur_sec}] after sync: ${cmd_after4}"
+        eval "$cmd_after4"
     fi
 
     echo "[${cur_sec}] done"
