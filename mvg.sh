@@ -1,7 +1,10 @@
 #!/usr/bin/env bash
 
+if [ -z "$MVG_ROOT_DIR" ]; then
+    MVG_ROOT_DIR="."
+fi
 
-BASE_PATH="./" # Config the base path for all modules, and end it with '/'
+BASE_PATH="${MVG_ROOT_DIR}/" # Config the base path for all modules, and end it with '/'
 
 CONF_PATH="./mvg.ini"
 
