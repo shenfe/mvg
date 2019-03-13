@@ -166,7 +166,7 @@ handle_sec_kvs()
             m_name="$(conv_name ${cur_sec})"
             git clone ${repo} ${git_path}/${m_name}
 
-            gen_wrapping $m_name "$git_path" $wrap # Wrap
+            # gen_wrapping $m_name "$git_path" $wrap # Wrap
 
             git_path="${git_path}/${m_name}"
         else
@@ -211,8 +211,11 @@ handle_sec_kvs()
             if [[ ! -z "$wrap" ]]; then
                 if [ "$wrap" = "py" ] || [ "$wrap" = "js" ]; then
                     m_name=$(conv_name ${cur_sec})
-                    mv $only_file ${m_name} # Rename
+                    if [ "${only_file}" != "${m_name}" ]; then
+                        mv $only_file ${m_name} # Rename
+                    fi
                     gen_wrapping $m_name . $wrap # Wrap
+                    cd ${m_name} # Enter the only wrapped folder
                 fi
             fi
         fi
