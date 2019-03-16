@@ -6,7 +6,7 @@ fi
 
 BASE_PATH="${MVG_ROOT_DIR}/" # Config the base path for all modules, and end it with '/'
 
-CONF_PATH="./mvg.ini"
+CONF_PATH="./.mvg.ini"
 
 echo "======== start ========"
 
@@ -62,9 +62,9 @@ get_first_file()
 check_file()
 {
     f=$1
-    if [[ -d $f ]]; then
+    if [ -d "$f" ]; then
         echo -1 # Directory
-    elif [[ -f $f ]]; then
+    elif [ -f "$f" ]; then
         echo 0 # File
     else
         echo 1 # Invalid
@@ -122,10 +122,10 @@ handle_sec_kvs()
     done
 
     # Get the local path, namely where to save
-    if [[ ! -z "$path" ]]
+    if [ ! -z "$path" ]
     then
         cur_path="${path}"
-    elif [[ ! -z "$subpath" ]]
+    elif [ ! -z "$subpath" ]
     then
         cur_path="${BASE_PATH}${subpath}"
     else
@@ -139,7 +139,7 @@ handle_sec_kvs()
     cd ${cur_path}
 
     # Execute a command before the sync
-    if [[ ! -z "$cmd_before" ]]
+    if [ ! -z "$cmd_before" ]
     then
         echo "[${cur_sec}] before sync: ${cmd_before}"
         eval "$cmd_before"
@@ -149,26 +149,26 @@ handle_sec_kvs()
     cd ${cur_path}
 
     # Execute the sync command
-    if [[ ! -z "$cmd" ]]
+    if [ ! -z "$cmd" ]
     then
         echo "[${cur_sec}] sync cmd: ${cmd}"
         eval "$cmd"
 
     # CURL
-    elif [[ ! -z "$file" ]]
+    elif [ ! -z "$file" ]
     then
         echo "[${cur_sec}] curl"
         curl -O -J $file
 
     # Git
-    elif [[ ! -z "$repo" ]]
+    elif [ ! -z "$repo" ]
     then
         cd ${cwd}
         git_path="${cur_path}"
 
         # Git clone
         echo "[${cur_sec}] git clone"
-        if [[ ! -z "$wrap" ]]
+        if [ ! -z "$wrap" ]
         then
             m_name="$(conv_name ${cur_sec})"
             git clone ${repo} ${git_path}/${m_name}
@@ -182,7 +182,7 @@ handle_sec_kvs()
         echo "................"
 
         # Git checkout
-        if [[ ! -z "$checkout" ]]
+        if [ ! -z "$checkout" ]
         then
             cd ${git_path}
             echo "[${cur_sec}] git checkout"
@@ -200,13 +200,13 @@ handle_sec_kvs()
     cd ${cwd}
     cd ${cur_path}
 
-    if [[ "$(count_files)" = "1" ]] # Check if there is only one file
+    if [ "$(count_files)" = "1" ] # Check if there is only one file
     then
         only_file=$(get_first_file)
         only_file_type=$(check_file $only_file)
         if [ "$only_file_type" = "0" ]; then # If it is a file
             ext=$(get_file_ext "$only_file") # Get the file extension
-            if [[ ! -z "$wrap" ]]; then
+            if [ ! -z "$wrap" ]; then
                 ext=$wrap
             fi
             if [ "$ext" = "py" ] || [ "$ext" = "js" ]; then
@@ -215,7 +215,7 @@ handle_sec_kvs()
                 gen_wrapping $m_name . $ext # Wrap
             fi
         elif [ "$only_file_type" = "-1" ]; then # If it is a folder
-            if [[ ! -z "$wrap" ]]; then
+            if [ ! -z "$wrap" ]; then
                 if [ "$wrap" = "py" ] || [ "$wrap" = "js" ]; then
                     m_name=$(conv_name ${cur_sec})
                     if [ "${only_file}" != "${m_name}" ]; then
@@ -231,27 +231,27 @@ handle_sec_kvs()
     echo "Please do not modify files here!\nGo to the right repository for source codes!" > WARNING
 
     # Execute a command after the sync
-    if [[ ! -z "$cmd_after" ]]
+    if [ ! -z "$cmd_after" ]
     then
         echo "[${cur_sec}] after sync: ${cmd_after}"
         eval "$cmd_after"
     fi
-    if [[ ! -z "$cmd_after1" ]]
+    if [ ! -z "$cmd_after1" ]
     then
         echo "[${cur_sec}] after sync: ${cmd_after1}"
         eval "$cmd_after1"
     fi
-    if [[ ! -z "$cmd_after2" ]]
+    if [ ! -z "$cmd_after2" ]
     then
         echo "[${cur_sec}] after sync: ${cmd_after2}"
         eval "$cmd_after2"
     fi
-    if [[ ! -z "$cmd_after3" ]]
+    if [ ! -z "$cmd_after3" ]
     then
         echo "[${cur_sec}] after sync: ${cmd_after3}"
         eval "$cmd_after3"
     fi
-    if [[ ! -z "$cmd_after4" ]]
+    if [ ! -z "$cmd_after4" ]
     then
         echo "[${cur_sec}] after sync: ${cmd_after4}"
         eval "$cmd_after4"
