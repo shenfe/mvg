@@ -4,6 +4,14 @@ if [ -z "$MVG_ROOT_DIR" ]; then
     MVG_ROOT_DIR="."
 fi
 
+if [ -z "$WRAP_WITH_LEVEL" ]; then
+    WRAP_WITH_LEVEL=1
+fi
+
+if [ -z "$ONLY_CMD_AFTER" ]; then
+    ONLY_CMD_AFTER=0
+fi
+
 BASE_PATH="${MVG_ROOT_DIR}/" # Config the base path for all modules, and end it with '/'
 
 CONF_PATH="./mvg.ini"
@@ -86,7 +94,11 @@ gen_wrapping()
     t=$3
     if [ "$t" = "py" ]
     then
-        echo "from ${m} import *" > ${p}/__init__.py
+        if [ "$WRAP_WITH_LEVEL" = "1" ]; then
+            echo "from .${m} import *" > ${p}/__init__.py
+        else
+            echo "from ${m} import *" > ${p}/__init__.py
+        fi
     elif [ "$t" = "js" ]
     then
         echo "export * from './${m}'" > ${p}/index.js
@@ -134,101 +146,122 @@ handle_sec_kvs()
     cur_path="${cur_path}${cur_sec}"
 
     echo "[${cur_sec}] in ${cur_path}"
-    rm -rf ${cur_path}
-    mkdir -p ${cur_path}
+    if [ "$ONLY_CMD_AFTER" = "0" ]; then
+        rm -rf ${cur_path}
+        mkdir -p ${cur_path}
+    fi
     cd ${cur_path}
 
-    # Execute a command before the sync
-    if [ ! -z "$cmd_before" ]
-    then
-        echo "[${cur_sec}] before sync: ${cmd_before}"
-        eval "$cmd_before"
+    if [ "$ONLY_CMD_AFTER" = "0" ]; then
+        # Execute a command before the sync
+        if [ ! -z "$cmd_before" ]
+        then
+            echo "[${cur_sec}] before sync: ${cmd_before}"
+            eval "$cmd_before"
+        fi
     fi
 
     cd ${cwd}
     cd ${cur_path}
 
-    # Execute the sync command
-    if [ ! -z "$cmd" ]
-    then
-        echo "[${cur_sec}] sync cmd: ${cmd}"
-        eval "$cmd"
+    if [ "$ONLY_CMD_AFTER" = "0" ]; then
 
-    # CURL
-    elif [ ! -z "$file" ]
-    then
-        echo "[${cur_sec}] curl"
-        curl -O -J $file
-
-    # Git
-    elif [ ! -z "$repo" ]
-    then
-        cd ${cwd}
-        git_path="${cur_path}"
-
-        # Git clone
-        echo "[${cur_sec}] git clone"
-        if [ ! -z "$wrap" ]
+        # Execute the sync command
+        if [ ! -z "$cmd" ]
         then
-            m_name="$(conv_name ${cur_sec})"
-            git clone ${repo} ${git_path}/${m_name}
+            echo "[${cur_sec}] sync cmd: ${cmd}"
+            eval "$cmd"
 
-            # gen_wrapping $m_name "$git_path" $wrap # Wrap
-
-            git_path="${git_path}/${m_name}"
-        else
-            git clone ${repo} ${git_path}
-        fi
-        echo "................"
-
-        # Git checkout
-        if [ ! -z "$checkout" ]
+        # CURL
+        elif [ ! -z "$file" ]
         then
-            cd ${git_path}
-            echo "[${cur_sec}] git checkout"
-            git checkout ${checkout}
-            echo "................"
+            echo "[${cur_sec}] curl"
+            curl -O -J $file
+
+        # Git
+        elif [ ! -z "$repo" ]
+        then
             cd ${cwd}
+            git_path="${cur_path}"
+
+            # Git clone
+            echo "[${cur_sec}] git clone"
+            if [ ! -z "$wrap" ]
+            then
+                m_name="$(conv_name ${cur_sec})"
+                git clone ${repo} ${git_path}/${m_name}
+
+                # gen_wrapping $m_name "$git_path" $wrap # Wrap
+
+                git_path="${git_path}/${m_name}"
+            else
+                git clone ${repo} ${git_path}
+            fi
+            echo "................"
+
+            # Git checkout
+            if [ ! -z "$checkout" ]
+            then
+                cd ${git_path}
+                echo "[${cur_sec}] git checkout"
+                git checkout ${checkout}
+                echo "................"
+                cd ${cwd}
+            fi
+
+            rm -rf ${git_path}/.git
+
+        else
+            echo "section [${cur_sec}]'s sync method not defined!"
         fi
 
-        rm -rf ${git_path}/.git
-
-    else
-        echo "section [${cur_sec}]'s sync method not defined!"
     fi
 
     cd ${cwd}
     cd ${cur_path}
 
-    if [ "$(count_files)" = "1" ] # Check if there is only one file
-    then
-        only_file=$(get_first_file)
-        only_file_type=$(check_file $only_file)
-        if [ "$only_file_type" = "0" ]; then # If it is a file
-            ext=$(get_file_ext "$only_file") # Get the file extension
-            if [ ! -z "$wrap" ]; then
-                ext=$wrap
-            fi
-            if [ "$ext" = "py" ] || [ "$ext" = "js" ]; then
-                m_name=$(conv_name ${cur_sec})
-                mv $only_file ${m_name}.${ext} # Rename
-                gen_wrapping $m_name . $ext # Wrap
-            fi
-        elif [ "$only_file_type" = "-1" ]; then # If it is a folder
-            if [ ! -z "$wrap" ]; then
-                if [ "$wrap" = "py" ] || [ "$wrap" = "js" ]; then
+    if [ "$ONLY_CMD_AFTER" = "0" ]; then
+
+        if [ "$(count_files)" = "1" ] # Check if there is only one file
+        then
+            only_file=$(get_first_file)
+            only_file_type=$(check_file $only_file)
+            if [ "$only_file_type" = "0" ]; then # If it is a file
+                ext=$(get_file_ext "$only_file") # Get the file extension
+                if [ ! -z "$wrap" ]; then
+                    ext=$wrap
+                fi
+                if [ "$ext" = "py" ] || [ "$ext" = "js" ]; then
                     m_name=$(conv_name ${cur_sec})
-                    if [ "${only_file}" != "${m_name}" ]; then
-                        mv $only_file ${m_name} # Rename
+                    mv $only_file ${m_name}.${ext} # Rename
+                    gen_wrapping $m_name . $ext # Wrap
+                fi
+            elif [ "$only_file_type" = "-1" ]; then # If it is a folder
+                if [ ! -z "$wrap" ]; then
+                    if [ "$wrap" = "py" ] || [ "$wrap" = "js" ]; then
+                        m_name=$(conv_name ${cur_sec})
+                        if [ "${only_file}" != "${m_name}" ]; then
+                            mv $only_file ${m_name} # Rename
+                        fi
+                        gen_wrapping $m_name . $wrap # Wrap
+                        cd ${m_name} # Enter the only wrapped folder
                     fi
-                    gen_wrapping $m_name . $wrap # Wrap
-                    cd ${m_name} # Enter the only wrapped folder
                 fi
             fi
         fi
-    fi
 
-    echo "Please do not modify files here!\nGo to the right repository for source codes!" > WARNING
+        echo "Please do not modify files here!\nGo to the right repository for source codes!" > WARNING
+
+    else
+
+        if [ ! -z "$wrap" ]; then
+            m_name=$(conv_name ${cur_sec})
+            if [ -d "$m_name" ]; then
+                cd ${m_name}
+            fi
+        fi
+
+    fi
 
     # Execute a command after the sync
     if [ ! -z "$cmd_after" ]
