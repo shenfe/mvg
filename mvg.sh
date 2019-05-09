@@ -14,7 +14,9 @@ fi
 
 BASE_PATH="${MVG_ROOT_DIR}/" # Config the base path for all modules, and end it with '/'
 
-CONF_PATH="./mvg.ini"
+if [ -z "$CONF_PATH" ]; then
+    CONF_PATH="./mvg.ini"
+fi
 
 echo "======== start ========"
 
